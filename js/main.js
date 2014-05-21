@@ -501,10 +501,9 @@ function getDataInJson() {
             one_dict["top"] = max - nextpipeupper.height();
             one_dict["bottom"] = max - (pipetop + pipeheight);
             one_dict["left"] = nextpipeupper.offset().left - 2;
-            copyofpipes += JSON.stringify(one_dict);
+            copyofpipes[i] = one_dict;
         }
         objecttoreturn["pipes"] = copyofpipes;
-        console.log(objecttoreturn);
         return JSON.stringify(objecttoreturn);
     } else {
         return "You're not in a game!";
