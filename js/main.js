@@ -485,8 +485,28 @@ var isIncompatible = {
 function getDataInJson() {
     if (currentstate == states.GameScreen) {
         // All the magic goes here.
-        return {};
+        var objecttoreturn = {};
+        var max = $("#land").offset().top;
+        // We'll need:
+        // A drop of bird position.
+        objecttoreturn["birdposition"] = max - position;
+        // A couple of pipes
+        var copyofpipes = [];
+        for (var i = 0; i < pipes.length; i++) {
+            var nextpipe = pipes[i];
+            var nextpipeupper = nextpipe.children(".pipe_upper");
+            var pipetop = nextpipeupper.offset().top + nextpipeupper.height();
+            one_dict = {};
+            one_dict["id"] = i
+            one_dict["top"] = max - nextpipeupper.height();
+            one_dict["bottom"] = max - (pipetop + pipeheight);
+            one_dict["left"] = nextpipeupper.offset().left - 2;
+            copyofpipes += JSON.stringify(one_dict);
+        }
+        objecttoreturn["pipes"] = copyofpipes;
+        console.log(objecttoreturn);
+        return JSON.stringify(objecttoreturn);
     } else {
-        return {};
+        return "You're not in a game!";
     }
 }
