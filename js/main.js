@@ -1,18 +1,18 @@
 /*
-   Copyright 2014 Nebez Briefkani
-   floppybird - main.js
+Copyright 2014 Nebez Briefkani
+floppybird - main.js
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 var debugmode = false;
@@ -52,6 +52,7 @@ buzz.all().setVolume(volume);
 //loops
 var loopGameloop;
 var loopPipeloop;
+var loopSendDataloop;
 
 $(document).ready(function () {
     if (window.location.search == "?debug") debugmode = true;
@@ -135,6 +136,7 @@ function startGame() {
 
     //start up our loops
     var updaterate = 1000.0 / 60.0; //60 times a second
+    loopSendDataloop = 0;
     loopGameloop = setInterval(gameloop, updaterate);
     loopPipeloop = setInterval(updatePipes, 1400);
 
@@ -165,8 +167,8 @@ function gameloop() {
 
     //create the bounding box
     var box = document.getElementById('player').getBoundingClientRect();
-    var origwidth = 34.0;
-    var origheight = 24.0;
+    var origwidth = 30.0;
+    var origheight = 20.0;
 
     var boxwidth = origwidth - (Math.sin(Math.abs(rotation) / 90) * 8);
     var boxheight = (origheight + box.height) / 2;
@@ -235,12 +237,21 @@ function gameloop() {
         //and score a point
         playerScore();
     }
+
+    if (loopSendDataloop == 0) {
+        var json = getDataInJson();
+        console.log(json.toString());
+        //__doPostBack('updatepanel', json.toString());
+    }
+
+    loopSendDataloop = (loopSendDataloop + 1) % 15;
 }
 
 //Handle space bar
 $(document).keydown(function (e) {
     //space bar!
-    if (e.keyCode == 32) {
+    // edit for esc !!
+    if (e.keyCode == 27) {
         //in ScoreScreen, hitting space should click the "replay" button. else it's just a regular spacebar hit
         if (currentstate == states.ScoreScreen) $("#replay").click();
         else screenClick();
@@ -274,7 +285,7 @@ function setBigScore(erase) {
 
     var digits = score.toString().split('');
     for (var i = 0; i < digits.length; i++)
-    elemscore.append("<img src='assets/font_big_" + digits[i] + ".png' alt='" + digits[i] + "'>");
+        elemscore.append("<img src='assets/font_big_" + digits[i] + ".png' alt='" + digits[i] + "'>");
 }
 
 function setSmallScore() {
@@ -283,7 +294,7 @@ function setSmallScore() {
 
     var digits = score.toString().split('');
     for (var i = 0; i < digits.length; i++)
-    elemscore.append("<img src='assets/font_small_" + digits[i] + ".png' alt='" + digits[i] + "'>");
+        elemscore.append("<img src='assets/font_small_" + digits[i] + ".png' alt='" + digits[i] + "'>");
 }
 
 function setHighScore() {
@@ -292,7 +303,7 @@ function setHighScore() {
 
     var digits = highscore.toString().split('');
     for (var i = 0; i < digits.length; i++)
-    elemscore.append("<img src='assets/font_small_" + digits[i] + ".png' alt='" + digits[i] + "'>");
+        elemscore.append("<img src='assets/font_small_" + digits[i] + ".png' alt='" + digits[i] + "'>");
 }
 
 function setMedal() {
@@ -301,7 +312,7 @@ function setMedal() {
 
     if (score < 10)
     //signal that no medal has been won
-    return false;
+        return false;
 
     if (score >= 10) medal = "bronze";
     if (score >= 20) medal = "silver";
@@ -487,23 +498,48 @@ function getDataInJson() {
         // All the magic goes here.
         var objecttoreturn = {};
         var max = $("#land").offset().top;
-        // We'll need:
-        // A drop of bird position.
-        objecttoreturn["birdposition"] = max - position;
+
+        var box = document.getElementById('player').getBoundingClientRect();
+        
+        objecttoreturn["birdpositionx"] = 77;
+        objecttoreturn["birdpositiony"] = Math.round(max - position);
+
         // A couple of pipes
         var copyofpipes = [];
-        for (var i = 0; i < pipes.length; i++) {
+        var maxymilian;
+        if (pipes.length > 2) {
+            maxymilian = 2;
+        } else {
+            maxymilian = pipes.length;
+        }
+        var i = 0;
+        if (maxymilian > 0){
+            if (pipes[0].children(".pipe_upper").offset().left - 2 + pipewidth <= objecttoreturn["birdpositionx"]) {
+                i = 1;
+                if (maxymilian < pipes.length) {
+                    maxymilian += 1;
+                }
+            }
+        }
+        for (i; i < maxymilian; i++) {
             var nextpipe = pipes[i];
             var nextpipeupper = nextpipe.children(".pipe_upper");
             var pipetop = nextpipeupper.offset().top + nextpipeupper.height();
             one_dict = {};
             one_dict["id"] = i
-            one_dict["top"] = max - nextpipeupper.height();
-            one_dict["bottom"] = max - (pipetop + pipeheight);
-            one_dict["left"] = nextpipeupper.offset().left - 2;
+            one_dict["top"] = Math.round(max - nextpipeupper.height());
+            one_dict["bottom"] = Math.round(max - (pipetop + pipeheight));
+            one_dict["left"] = Math.round(nextpipeupper.offset().left - 2);
+            one_dict["right"] = Math.round(one_dict["left"] + pipewidth);
+            if (i == 0) {
+                objecttoreturn["nextpipeleft"] = one_dict["left"] - 77;
+                objecttoreturn["nextpiperight"] = one_dict["right"] - 77;
+                objecttoreturn["hightdelta"] = one_dict["bottom"] + Math.round(pipeheight / 2) - objecttoreturn["birdpositiony"];
+            }
             copyofpipes[i] = one_dict;
         }
         objecttoreturn["pipes"] = copyofpipes;
+
         return JSON.stringify(objecttoreturn);
     } else {
         return "You're not in a game!";
